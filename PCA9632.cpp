@@ -9,6 +9,14 @@
 
 #include "PCA9632.h"
 
+#define PCA9632_NO_INCREMENT      0x00
+#define PCA9632_AUTO_INCR_ALL     0x80
+//  not used.
+//  #define PCA9632_AUTO_INCR_xxx    0xA0
+//  #define PCA9632_AUTO_INCR_xxx    0xC0
+//  #define PCA9632_AUTO_INCR_xxx    0xE0
+
+
 
 //////////////////////////////////////////////////////////////
 //
@@ -90,7 +98,8 @@ uint8_t PCA9632::write(uint8_t R, uint8_t G, uint8_t B, uint8_t W)
 uint8_t PCA9632::write(uint8_t * arr)
 {
   _wire->beginTransmission(_address);
-  _wire->write(PCA9632_PWM0);
+  //  auto increment all  page 8 - table 5.
+  _wire->write(PCA9632_AUTO_INCR_ALL + PCA9632_PWM0);
   for (uint8_t i = 0; i < 4; i++)
   {
     _wire->write(arr[i]);
@@ -105,6 +114,12 @@ uint8_t PCA9632::write(uint8_t * arr)
   return _error;
 }
 
+uint8_t PCA9632::allOff()
+{
+  uint8_t arr[4] = {0, 0, 0, 0};
+  return write(arr);
+}
+
 
 /////////////////////////////////////////////////////
 //
@@ -115,22 +130,44 @@ uint8_t PCA9632::setMode1(uint8_t value)
   return writeRegister(PCA9632_MODE1, value);
 }
 
-
 uint8_t PCA9632::setMode2(uint8_t value)
 {
   return writeRegister(PCA9632_MODE2, value);
 }
-
 
 uint8_t PCA9632::getMode1()
 {
   return readRegister(PCA9632_MODE1);
 }
 
-
 uint8_t PCA9632::getMode2()
 {
   return readRegister(PCA9632_MODE2);
+}
+
+
+/////////////////////////////////////////////////////
+//
+//  GROUP REGISTERS
+//
+uint8_t PCA9632::setGroupPWM(uint8_t value)
+{
+  return writeRegister(PCA9632_GRPPWM, value);
+}
+
+uint8_t PCA9632::getGroupPWM()
+{
+  return readRegister(PCA9632_GRPPWM);
+}
+
+uint8_t PCA9632::setGroupFREQ(uint8_t value)
+{
+  return writeRegister(PCA9632_GRPFREQ, value);
+}
+
+uint8_t PCA9632::getGroupFREQ()
+{
+  return readRegister(PCA9632_GRPFREQ);
 }
 
 
@@ -207,6 +244,7 @@ int PCA9632::lastError()
 uint8_t PCA9632::writeRegister(uint8_t reg, uint8_t value)
 {
   _wire->beginTransmission(_address);
+  //  no Auto-Increment  page 8 - table 5.
   _wire->write(reg);
   _wire->write(value);
   _error = _wire->endTransmission();

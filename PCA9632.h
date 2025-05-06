@@ -30,15 +30,6 @@
 #define PCA9632_ALLCALLADR          0x0C
 
 
-//  REGISTER CONTENT
-//  TODO GRPPWM
-//  TODO GRPFREQ
-//  TODO SUBADR1
-//  TODO SUBADR2
-//  TODO SUBADR3
-//  TODO ALLCALLADR
-
-
 //  ERROR CODES - compatible with PCA9634
 #define PCA9632_OK                  0x00
 #define PCA9632_ERROR               0xFF
@@ -98,11 +89,13 @@ public:
   uint8_t  writeG(uint8_t G);
   uint8_t  writeB(uint8_t B);
   uint8_t  writeW(uint8_t W);
+  //  if not thinking in RGBW but in channels 0..3
   uint8_t  write(uint8_t channel, uint8_t value);
 
   //  RGBW setting, write four PWM registers, last has default to get "writeRGB()"
   uint8_t  write(uint8_t R, uint8_t G, uint8_t B, uint8_t W = 0);
   uint8_t  write(uint8_t * arr);  //  array of at least 4 elements.
+  uint8_t  allOff();
 
 
   /////////////////////////////////////////////////////
@@ -114,6 +107,34 @@ public:
   uint8_t getMode1();
   uint8_t getMode2();
 
+
+  /////////////////////////////////////////////////////
+  //
+  //  GROUP REGISTERS
+  //
+  uint8_t setGroupPWM(uint8_t value);
+  uint8_t getGroupPWM();
+  uint8_t setGroupFREQ(uint8_t value);
+  uint8_t getGroupFREQ();
+
+
+  /////////////////////////////////////////////////////
+  //
+  //  SUB CALL  -  ALL CALL  TODO  See PCA9634
+  //
+  //  nr = { 1, 2, 3 }
+  //  bool     enableSubCall(uint8_t nr);
+  //  bool     disableSubCall(uint8_t nr);
+  //  bool     isEnabledSubCall(uint8_t nr);
+  //  bool     setSubCallAddress(uint8_t nr, uint8_t address);
+  //  uint8_t  getSubCallAddress(uint8_t nr);
+  //  
+  //  bool     enableAllCall();
+  //  bool     disableAllCall();
+  //  bool     isEnabledAllCall();
+  //  bool     setAllCallAddress(uint8_t address);
+  //  uint8_t  getAllCallAddress();
+  
 
   /////////////////////////////////////////////////////
   //
