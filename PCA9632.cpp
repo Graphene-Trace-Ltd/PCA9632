@@ -2,12 +2,20 @@
 //    FILE: PCA9632.cpp
 //  AUTHOR: Rob Tillaart
 //    DATE: 2024-11-25
-// VERSION: 0.1.0
+// VERSION: 0.1.1
 // PURPOSE: Arduino library for PCA9632 and PCA9633 4 channel, I2C LED driver.
 //     URL: https://github.com/RobTillaart/PCA9632
 
 
 #include "PCA9632.h"
+
+#define PCA9632_NO_INCREMENT      0x00
+#define PCA9632_AUTO_INCR_ALL     0x80
+//  not used.
+//  #define PCA9632_AUTO_INCR_xxx    0xA0
+//  #define PCA9632_AUTO_INCR_xxx    0xC0
+//  #define PCA9632_AUTO_INCR_xxx    0xE0
+
 
 
 //////////////////////////////////////////////////////////////
@@ -52,22 +60,22 @@ uint8_t PCA9632::getAddress()
 //
 uint8_t PCA9632::writeR(uint8_t R)
 {
-  return writeReg(PCA9632_PWM0, R);
+  return writeRegister(PCA9632_PWM0, R);
 }
 
 uint8_t PCA9632::writeG(uint8_t G)
 {
-  return writeReg(PCA9632_PWM1, G);
+  return writeRegister(PCA9632_PWM1, G);
 }
 
 uint8_t PCA9632::writeB(uint8_t B)
 {
-  return writeReg(PCA9632_PWM2, B);
+  return writeRegister(PCA9632_PWM2, B);
 }
 
 uint8_t PCA9632::writeW(uint8_t W)
 {
-  return writeReg(PCA9632_PWM3, W);
+  return writeRegister(PCA9632_PWM3, W);
 }
 
 uint8_t PCA9632::write(uint8_t channel, uint8_t value)
@@ -77,7 +85,7 @@ uint8_t PCA9632::write(uint8_t channel, uint8_t value)
     _error = PCA9632_ERR_CHAN;
     return _error;
   }
-  return writeReg(PCA9632_PWM0 + channel, value);
+  return writeRegister(PCA9632_PWM0 + channel, value);
 }
 
 uint8_t PCA9632::write(uint8_t R, uint8_t G, uint8_t B, uint8_t W)
@@ -90,7 +98,8 @@ uint8_t PCA9632::write(uint8_t R, uint8_t G, uint8_t B, uint8_t W)
 uint8_t PCA9632::write(uint8_t * arr)
 {
   _wire->beginTransmission(_address);
-  _wire->write(PCA9632_PWM0);
+  //  auto increment all  page 8 - table 5.
+  _wire->write(PCA9632_AUTO_INCR_ALL + PCA9632_PWM0);
   for (uint8_t i = 0; i < 4; i++)
   {
     _wire->write(arr[i]);
@@ -105,6 +114,12 @@ uint8_t PCA9632::write(uint8_t * arr)
   return _error;
 }
 
+uint8_t PCA9632::allOff()
+{
+  uint8_t arr[4] = {0, 0, 0, 0};
+  return write(arr);
+}
+
 
 /////////////////////////////////////////////////////
 //
@@ -112,25 +127,47 @@ uint8_t PCA9632::write(uint8_t * arr)
 //
 uint8_t PCA9632::setMode1(uint8_t value)
 {
-  return writeReg(PCA9632_MODE1, value);
+  return writeRegister(PCA9632_MODE1, value);
 }
-
 
 uint8_t PCA9632::setMode2(uint8_t value)
 {
-  return writeReg(PCA9632_MODE2, value);
+  return writeRegister(PCA9632_MODE2, value);
 }
-
 
 uint8_t PCA9632::getMode1()
 {
-  return readReg(PCA9632_MODE1);
+  return readRegister(PCA9632_MODE1);
 }
-
 
 uint8_t PCA9632::getMode2()
 {
-  return readReg(PCA9632_MODE2);
+  return readRegister(PCA9632_MODE2);
+}
+
+
+/////////////////////////////////////////////////////
+//
+//  GROUP REGISTERS
+//
+uint8_t PCA9632::setGroupPWM(uint8_t value)
+{
+  return writeRegister(PCA9632_GRPPWM, value);
+}
+
+uint8_t PCA9632::getGroupPWM()
+{
+  return readRegister(PCA9632_GRPPWM);
+}
+
+uint8_t PCA9632::setGroupFREQ(uint8_t value)
+{
+  return writeRegister(PCA9632_GRPFREQ, value);
+}
+
+uint8_t PCA9632::getGroupFREQ()
+{
+  return readRegister(PCA9632_GRPFREQ);
 }
 
 
@@ -147,7 +184,7 @@ uint8_t PCA9632::setLedDriverModeAll(uint8_t mode)
   }
   //  all 4 channels same mode.
   uint8_t mask = mode | mode << 2 | mode << 4 | mode << 6;
-  return writeReg(PCA9632_LEDOUT, mask);
+  return writeRegister(PCA9632_LEDOUT, mask);
 }
 
 
@@ -168,8 +205,8 @@ uint8_t PCA9632::setLedDriverMode(uint8_t channel, uint8_t mode)
   uint8_t shift = channel * 2;  // 0,2,4,6 places
   uint8_t setmask = mode << shift;
   uint8_t clrmask = ~(0x03 << shift);
-  uint8_t value = (readReg(PCA9632_LEDOUT) & clrmask) | setmask;
-  return writeReg(PCA9632_LEDOUT, value);
+  uint8_t value = (readRegister(PCA9632_LEDOUT) & clrmask) | setmask;
+  return writeRegister(PCA9632_LEDOUT, value);
 }
 
 
@@ -183,7 +220,7 @@ uint8_t PCA9632::getLedDriverMode(uint8_t channel)
   }
 
   uint8_t shift = channel * 2;  //  0, 2, 4, 6 places
-  uint8_t value = (readReg(PCA9632_LEDOUT) >> shift ) & 0x03;
+  uint8_t value = (readRegister(PCA9632_LEDOUT) >> shift ) & 0x03;
   _error = PCA9632_OK;
   return value;
 }
@@ -204,9 +241,10 @@ int PCA9632::lastError()
 //
 //  LOW LEVEL
 //
-uint8_t PCA9632::writeReg(uint8_t reg, uint8_t value)
+uint8_t PCA9632::writeRegister(uint8_t reg, uint8_t value)
 {
   _wire->beginTransmission(_address);
+  //  no Auto-Increment  page 8 - table 5.
   _wire->write(reg);
   _wire->write(value);
   _error = _wire->endTransmission();
@@ -216,7 +254,7 @@ uint8_t PCA9632::writeReg(uint8_t reg, uint8_t value)
 }
 
 
-uint8_t PCA9632::readReg(uint8_t reg)
+uint8_t PCA9632::readRegister(uint8_t reg)
 {
   _wire->beginTransmission(_address);
   _wire->write(reg);
