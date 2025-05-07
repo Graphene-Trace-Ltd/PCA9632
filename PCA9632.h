@@ -3,14 +3,17 @@
 //    FILE: PCA9632.h
 //  AUTHOR: Rob Tillaart
 //    DATE: 2024-11-25
-// VERSION: 0.1.0
+// VERSION: 0.1.1
 // PURPOSE: Arduino library for PCA9632 and PCA9633 4 channel, I2C LED driver.
 //     URL: https://github.com/RobTillaart/PCA9632
 
 #include "Arduino.h"
 #include "Wire.h"
 
-#define PCA9632_LIB_VERSION (F("0.1.0"))
+
+
+#define PCA9632_LIB_VERSION         (F("0.1.1"))
+
 
 //  REGISTERS PCA9632
 #define PCA9632_MODE1 0x00
@@ -26,14 +29,6 @@
 #define PCA9632_SUBADR2 0x0A
 #define PCA9632_SUBADR3 0x0B
 #define PCA9632_ALLCALLADR 0x0C
-
-//  REGISTER CONTENT
-//  TODO GRPPWM
-//  TODO GRPFREQ
-//  TODO SUBADR1
-//  TODO SUBADR2
-//  TODO SUBADR3
-//  TODO ALLCALLADR
 
 //  ERROR CODES - compatible with PCA9634
 #define PCA9632_OK 0x00
@@ -57,12 +52,14 @@
 #define PCA9632_MODE1_DEFAULT 0x81
 
 //  Configuration bits MODE2 REGISTER
-#define PCA9632_MODE2_BLINK 0x20     //  0 = dim          1 = blink
-#define PCA9632_MODE2_INVERT 0x10    //  0 = normal       1 = inverted
-#define PCA9632_MODE2_ACK 0x08       //  0 = on STOP      1 = on ACK
-#define PCA9632_MODE2_TOTEMPOLE 0x04 //  0 = open drain   1 = totem-pole
-#define PCA9632_MODE2_NONE 0x00
-#define PCA9632_MODE2_DEFAULT 0x02 // 0x01
+
+#define PCA9632_MODE2_BLINK         0x20  //  0 = dim          1 = blink
+#define PCA9632_MODE2_INVERT        0x10  //  0 = normal       1 = inverted
+#define PCA9632_MODE2_ACK           0x08  //  0 = on STOP      1 = on ACK
+#define PCA9632_MODE2_TOTEMPOLE     0x04  //  0 = open drain   1 = totem-pole
+#define PCA9632_MODE2_NONE          0x00
+#define PCA9632_MODE2_DEFAULT       0x02  //  fix #2
+
 
 //  modi for LEDOUT REGISTER (4x shifted))
 #define PCA9632_LEDOFF 0x00 //  default @ startup
@@ -85,15 +82,18 @@ public:
   //  WRITE
   //
   //  write single PWM registers
-  uint8_t writeR(uint8_t R);
-  uint8_t writeG(uint8_t G);
-  uint8_t writeB(uint8_t B);
-  uint8_t writeW(uint8_t W);
-  uint8_t write(uint8_t channel, uint8_t value);
+
+  uint8_t  writeR(uint8_t R);
+  uint8_t  writeG(uint8_t G);
+  uint8_t  writeB(uint8_t B);
+  uint8_t  writeW(uint8_t W);
+  //  if not thinking in RGBW but in channels 0..3
+  uint8_t  write(uint8_t channel, uint8_t value);
 
   //  RGBW setting, write four PWM registers, last has default to get "writeRGB()"
-  uint8_t write(uint8_t R, uint8_t G, uint8_t B, uint8_t W = 0);
-  uint8_t write(uint8_t *arr); //  array of at least 4 elements.
+  uint8_t  write(uint8_t R, uint8_t G, uint8_t B, uint8_t W = 0);
+  uint8_t  write(uint8_t * arr);  //  array of at least 4 elements.
+  uint8_t  allOff();
 
   /////////////////////////////////////////////////////
   //
@@ -103,6 +103,34 @@ public:
   uint8_t setMode2(uint8_t value);
   uint8_t getMode1();
   uint8_t getMode2();
+
+  /////////////////////////////////////////////////////
+  //
+  //  GROUP REGISTERS
+  //
+  uint8_t setGroupPWM(uint8_t value);
+  uint8_t getGroupPWM();
+  uint8_t setGroupFREQ(uint8_t value);
+  uint8_t getGroupFREQ();
+
+
+  /////////////////////////////////////////////////////
+  //
+  //  SUB CALL  -  ALL CALL  TODO  See PCA9634
+  //
+  //  nr = { 1, 2, 3 }
+  //  bool     enableSubCall(uint8_t nr);
+  //  bool     disableSubCall(uint8_t nr);
+  //  bool     isEnabledSubCall(uint8_t nr);
+  //  bool     setSubCallAddress(uint8_t nr, uint8_t address);
+  //  uint8_t  getSubCallAddress(uint8_t nr);
+  //  
+  //  bool     enableAllCall();
+  //  bool     disableAllCall();
+  //  bool     isEnabledAllCall();
+  //  bool     setAllCallAddress(uint8_t address);
+  //  uint8_t  getAllCallAddress();
+  
 
   /////////////////////////////////////////////////////
   //
@@ -123,10 +151,11 @@ public:
   //
   //  OTHER
   //
-  //  get/setRegister() will be protected in the future
+  //  readRegister() and writeRegister() will be protected in the future
   //  check datasheet.
-  uint8_t writeReg(uint8_t reg, uint8_t mask);
-  uint8_t readReg(uint8_t reg);
+
+  uint8_t  writeRegister(uint8_t reg, uint8_t mask);
+  uint8_t  readRegister(uint8_t reg);
 
 protected:
   uint8_t _address;
